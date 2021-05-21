@@ -12,14 +12,17 @@ import (
 	"time"
 )
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 var connections []*websocket.Conn
 
 var myClient = &http.Client{Timeout: 10 * time.Second}
 
 const (
 	BaseURL = "https://api.conoce360.tech/bancas"
-	//BaseURL = "http://192.168.1.108:9001/bancas"
 )
 
 type Banca struct {
@@ -28,12 +31,12 @@ type Banca struct {
 }
 
 type JSONResponse struct {
-	CantLibre 	int 	`json:"cantLibre"`
-	CantOcupado int 	`json:"cantOcupado"`
-	Banca 		[]Banca	`json:"bancas"`
+	CantLibre   int     `json:"cantLibre"`
+	CantOcupado int     `json:"cantOcupado"`
+	Banca       []Banca `json:"bancas"`
 }
 
-func getJson(url string, decoded interface{}) error{
+func getJson(url string, decoded interface{}) error {
 	r, err := myClient.Get(url)
 	if err != nil {
 		return err
@@ -62,9 +65,9 @@ func broadcastMessage(msg []byte, connections []*websocket.Conn) {
 	contOcupados = len(bancas) - contLibres
 
 	jsonRes := JSONResponse{
-		CantLibre: contLibres,
+		CantLibre:   contLibres,
 		CantOcupado: contOcupados,
-		Banca: bancas,
+		Banca:       bancas,
 	}
 
 	fmt.Println(jsonRes)
@@ -98,7 +101,6 @@ func main() {
 		defer conn.Close()
 
 		incomingConnections <- conn
-		log.Println(conn)
 
 		for {
 			// Receive message
